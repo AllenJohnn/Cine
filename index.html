@@ -3,19 +3,73 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CINE - Premium Cinema Experience</title>
-    <meta name="description" content="Discover and explore the finest movies and TV shows with CINE" />
-    <meta property="og:title" content="CINE - Premium Cinema Experience" />
-    <meta property="og:description" content="Your premium destination for discovering exceptional cinema" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    
+    <!-- Primary Meta Tags -->
+    <title>CineView Hub - Discover Your Next Favorite Movie or TV Show</title>
+    <meta name="title" content="CineView Hub - Discover Your Next Favorite Movie or TV Show" />
+    <meta name="description" content="Your premium destination for discovering exceptional cinema. Explore millions of movies and TV shows, get personalized recommendations, manage your watchlist, and stay updated with trending content." />
+    <meta name="keywords" content="movies, tv shows, cinema, entertainment, streaming, watchlist, movie reviews, film database, TMDB" />
+    <meta name="author" content="CineView Hub" />
+    <meta name="robots" content="index, follow" />
+    
+    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="/og-image.jpg" />
+    <meta property="og:url" content="https://cineviewhub.com/" />
+    <meta property="og:title" content="CineView Hub - Discover Your Next Favorite Movie or TV Show" />
+    <meta property="og:description" content="Your premium destination for discovering exceptional cinema. Explore millions of movies and TV shows with personalized recommendations." />
+    <meta property="og:image" content="https://cineviewhub.com/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="CineView Hub" />
+    <meta property="og:locale" content="en_US" />
+    
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="/og-image.jpg" />
+    <meta name="twitter:url" content="https://cineviewhub.com/" />
+    <meta name="twitter:title" content="CineView Hub - Discover Your Next Favorite Movie or TV Show" />
+    <meta name="twitter:description" content="Your premium destination for discovering exceptional cinema." />
+    <meta name="twitter:image" content="https://cineviewhub.com/og-image.jpg" />
+    <meta name="twitter:creator" content="@cineviewhub" />
+    
+    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#0f172a" />
+    
+    <!-- Preconnect to external domains for performance -->
+    <link rel="preconnect" href="https://api.themoviedb.org" />
+    <link rel="preconnect" href="https://image.tmdb.org" />
+    <link rel="dns-prefetch" href="https://api.themoviedb.org" />
+    <link rel="dns-prefetch" href="https://image.tmdb.org" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://cineviewhub.com/" />
+    
+    <!-- PWA Support -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="CineView Hub" />
+    
+    <!-- Performance & Security -->
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
   </head>
 
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <noscript>
+      <div style="display: flex; align-items: center; justify-content: center; height: 100vh; font-family: system-ui; text-align: center; padding: 2rem;">
+        <div>
+          <h1>JavaScript Required</h1>
+          <p>CineView Hub requires JavaScript to be enabled. Please enable JavaScript in your browser settings to continue.</p>
+        </div>
+      </div>
+    </noscript>
   </body>
 </html>

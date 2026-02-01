@@ -1,16 +1,49 @@
 {
-  "name": "cine",
-  "private": true,
+  "name": "cineview-hub",
+  "private": false,
   "version": "1.0.0",
+  "description": "A modern, feature-rich web application for discovering and exploring movies and TV shows with a premium cinema experience",
   "type": "module",
+  "author": {
+    "name": "Your Name",
+    "email": "your.email@example.com",
+    "url": "https://github.com/yourusername"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/cineview-hub.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/cineview-hub/issues"
+  },
+  "homepage": "https://github.com/yourusername/cineview-hub#readme",
+  "keywords": [
+    "movies",
+    "tv-shows",
+    "cinema",
+    "entertainment",
+    "tmdb",
+    "react",
+    "typescript",
+    "vite",
+    "tailwindcss"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json,css,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,json,css,md}\"",
+    "clean": "rimraf dist node_modules/.vite",
+    "prepare": "husky install || true"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

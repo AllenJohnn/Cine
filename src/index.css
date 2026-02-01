@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@300;400;500;600;700;800;900&family=Oswald:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -36,25 +36,26 @@
 
   body {
     @apply bg-black text-white antialiased;
-    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
     overflow-x: hidden;
     font-weight: 400;
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Cinzel', 'Playfair Display', Georgia, serif;
+    font-family: 'Oswald', 'Bebas Neue', sans-serif;
     font-weight: 700;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.03em;
     text-transform: uppercase;
   }
 
   h1 {
-    font-family: 'Bebas Neue', 'Cinzel', sans-serif;
-    letter-spacing: 0.05em;
+    font-family: 'Bebas Neue', 'Oswald', sans-serif;
+    letter-spacing: 0.08em;
+    font-weight: 700;
   }
 }
 
@@ -325,6 +326,60 @@
 
   .backdrop-blur-custom {
     backdrop-filter: blur(30px) saturate(180%);
+  }
+
+  /* Accessibility - Screen reader only class */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Skip to main content link for keyboard navigation */
+  .skip-link {
+    @apply absolute top-0 left-0 bg-primary text-primary-foreground p-4 z-[9999] -translate-y-full focus:translate-y-0 transition-transform;
+  }
+
+  /* Focus visible styles for better keyboard navigation */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Ensure buttons and interactive elements are accessible */
+  button:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible {
+    @apply ring-2 ring-primary ring-offset-2;
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .glass-card {
+      @apply border-white/30 bg-white/10;
+    }
+    
+    button,
+    a {
+      @apply border border-white/50;
+    }
   }
 }
 

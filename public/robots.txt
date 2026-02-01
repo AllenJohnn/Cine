@@ -1,3 +1,6 @@
+# robots.txt for CineView Hub
+# https://www.robotstxt.org/robotstxt.html
+
 User-agent: Googlebot
 Allow: /
 
@@ -12,3 +15,9 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+# Disallow admin pages
+Disallow: /admin
+Disallow: /api/
+
+Sitemap: https://cineviewhub.com/sitemap.xml
