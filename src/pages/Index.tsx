@@ -41,6 +41,14 @@ export default function Index() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        console.log("Starting data fetch...");
+        
+        // Add timeout to prevent infinite loading
+        const timeoutId = setTimeout(() => {
+          console.warn("Data fetch timeout - setting loading to false");
+          setLoading(false);
+        }, 15000);
+
         const [trending, popular, topRated, tvPopular, tvTrending] = await Promise.all([
           tmdb.getTrending("movie"),
           tmdb.getPopular("movie"),
@@ -48,6 +56,8 @@ export default function Index() {
           tmdb.getPopular("tv"),
           tmdb.getTrending("tv"),
         ]);
+
+        console.log("API calls successful, fetching featured data...");
 
         const { data: featuredData } = await supabase
           .from("featured_movie")
@@ -77,20 +87,33 @@ export default function Index() {
           setHeroMovies([featured, ...topMovies.slice(0, 4)]);
           setFeaturedMovie(featured);
         } else {
-          const moviesWithDetails = await Promise.all(
-            topMovies.slice(0, 5).map((m: Movie) => tmdb.getDetails(m.id, "movie"))
-          );
-          setHeroMovies(moviesWithDetails);
-          setFeaturedMovie(moviesWithDetails[0]);
+          // If we don't have a featured movie, just use the first top movie
+          if (topMovies.length > 0) {
+            setFeaturedMovie(topMovies[0]);
+            setHeroMovies(topMovies.slice(0, 5));
+          } else {
+            // Fallback: use first trending movie
+            const firstMovie = trending.results[0];
+            if (firstMovie) {
+              setFeaturedMovie(firstMovie);
+              setHeroMovies([firstMovie, ...trending.results.slice(1, 5)]);
+            }
+          }
         }
 
+        console.log("Setting movies...");
         setTrendingMovies(filterContent(trending.results));
         setPopularMovies(filterContent(popular.results));
         setTopRatedMovies(filterContent(topRated.results));
         setPopularTv(filterContent(tvPopular.results));
         setTrendingTv(filterContent(tvTrending.results));
+        
+        clearTimeout(timeoutId);
+        console.log("Data fetch complete");
       } catch (error) {
         console.error("Failed to fetch data:", error);
+        // Set default movies from error state
+        setLoading(false);
       } finally {
         setLoading(false);
       }
@@ -207,6 +230,21 @@ export default function Index() {
         </div>
       </main>
         </>
+      )}
+
+      {!loading && !featuredMovie && (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <h2 className="text-2xl font-bold">Unable to Load Content</h2>
+            <p className="text-white/60">Please refresh the page to try again</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 bg-white text-black rounded-lg font-semibold hover:bg-white/90 transition"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
       )}
 
       <Footer />
