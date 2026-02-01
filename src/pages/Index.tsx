@@ -47,29 +47,75 @@ export default function Index() {
         const timeoutId = setTimeout(() => {
           console.warn("Data fetch timeout - setting loading to false");
           setLoading(false);
-        }, 15000);
+        }, 20000); // Increased to 20 seconds
 
-        const [trending, popular, topRated, tvPopular, tvTrending] = await Promise.all([
-          tmdb.getTrending("movie"),
-          tmdb.getPopular("movie"),
-          tmdb.getTopRated("movie"),
-          tmdb.getPopular("tv"),
-          tmdb.getTrending("tv"),
-        ]);
+        let trendingData, popularData, topRatedData, tvPopularData, tvTrendingData;
 
-        console.log("API calls successful, fetching featured data...");
+        // Fetch with individual error handling to prevent total failure
+        try {
+          trendingData = await tmdb.getTrending("movie");
+        } catch (e) {
+          console.error("Trending fetch failed:", e);
+          trendingData = { results: [] };
+        }
 
-        const { data: featuredData } = await supabase
-          .from("featured_movie")
-          .select("*")
-          .maybeSingle();
+        try {
+          popularData = await tmdb.getPopular("movie");
+        } catch (e) {
+          console.error("Popular fetch failed:", e);
+          popularData = { results: [] };
+        }
 
-        // Combine and sort by popularity + rating
-        const allMovies = [...trending.results, ...popular.results];
+        try {
+          topRatedData = await tmdb.getTopRated("movie");
+        } catch (e) {
+          console.error("Top rated fetch failed:", e);
+          topRatedData = { results: [] };
+        }
+
+        try {
+          tvPopularData = await tmdb.getPopular("tv");
+        } catch (e) {
+          console.error("TV popular fetch failed:", e);
+          tvPopularData = { results: [] };
+        }
+
+        try {
+          tvTrendingData = await tmdb.getTrending("tv");
+        } catch (e) {
+          console.error("TV trending fetch failed:", e);
+          tvTrendingData = { results: [] };
+        }
+
+        console.log("API calls completed, setting data...");
+
+        let featuredData = null;
+        try {
+          const result = await supabase
+            .from("featured_movie")
+            .select("*")
+            .maybeSingle();
+          featuredData = result.data;
+        } catch (e) {
+          console.error("Featured data fetch failed:", e);
+          featuredData = null;
+        }
+
+        // Use trending as fallback if popular is empty
+        const trendingResults = trendingData?.results || [];
+        const popularResults = popularData?.results || [];
+        const allMovies = [...trendingResults, ...popularResults];
+        
+        if (allMovies.length === 0) {
+          console.warn("No movies found, showing fallback UI");
+          clearTimeout(timeoutId);
+          setLoading(false);
+          return;
+        }
+
         const uniqueMovies = Array.from(
           new Map(allMovies.map((m) => [m.id, m])).values()
         ).sort((a, b) => {
-          // Prioritize by vote_average (rating) first, then popularity
           const ratingDiff = b.vote_average - a.vote_average;
           return ratingDiff !== 0 ? ratingDiff : (b.popularity || 0) - (a.popularity || 0);
         });
@@ -79,41 +125,42 @@ export default function Index() {
           .filter((m: Movie) => m.vote_average >= 7.5 && m.backdrop_path && (m.popularity || 0) > 50)
           .slice(0, 5);
 
+        let featured = null;
+        let heroMoviesList = [];
+
         if (featuredData) {
-          const featured = await tmdb.getDetails(
-            featuredData.tmdb_id,
-            featuredData.media_type as "movie" | "tv"
-          );
-          setHeroMovies([featured, ...topMovies.slice(0, 4)]);
-          setFeaturedMovie(featured);
-        } else {
-          // If we don't have a featured movie, just use the first top movie
-          if (topMovies.length > 0) {
-            setFeaturedMovie(topMovies[0]);
-            setHeroMovies(topMovies.slice(0, 5));
-          } else {
-            // Fallback: use first trending movie
-            const firstMovie = trending.results[0];
-            if (firstMovie) {
-              setFeaturedMovie(firstMovie);
-              setHeroMovies([firstMovie, ...trending.results.slice(1, 5)]);
-            }
+          try {
+            featured = await tmdb.getDetails(
+              featuredData.tmdb_id,
+              featuredData.media_type as "movie" | "tv"
+            );
+            heroMoviesList = [featured, ...topMovies.slice(0, 4)];
+          } catch (e) {
+            console.error("Featured movie details fetch failed:", e);
+            featured = topMovies[0] || trendingResults[0];
+            heroMoviesList = topMovies.length > 0 ? topMovies.slice(0, 5) : trendingResults.slice(0, 5);
           }
+        } else {
+          featured = topMovies[0] || trendingResults[0];
+          heroMoviesList = topMovies.length > 0 ? topMovies.slice(0, 5) : trendingResults.slice(0, 5);
         }
 
-        console.log("Setting movies...");
-        setTrendingMovies(filterContent(trending.results));
-        setPopularMovies(filterContent(popular.results));
-        setTopRatedMovies(filterContent(topRated.results));
-        setPopularTv(filterContent(tvPopular.results));
-        setTrendingTv(filterContent(tvTrending.results));
+        if (featured) {
+          setFeaturedMovie(featured);
+          setHeroMovies(heroMoviesList);
+        }
+
+        console.log("Setting movies data...");
+        setTrendingMovies(filterContent(trendingResults));
+        setPopularMovies(filterContent(popularResults));
+        setTopRatedMovies(filterContent(topRatedData?.results || []));
+        setPopularTv(filterContent(tvPopularData?.results || []));
+        setTrendingTv(filterContent(tvTrendingData?.results || []));
         
         clearTimeout(timeoutId);
         console.log("Data fetch complete");
       } catch (error) {
-        console.error("Failed to fetch data:", error);
-        // Set default movies from error state
-        setLoading(false);
+        console.error("Unexpected error during fetch:", error);
       } finally {
         setLoading(false);
       }
@@ -176,55 +223,67 @@ export default function Index() {
             animate={{ opacity: 1 }}
             className="space-y-12"
           >
-            <MovieSlider
-              title="Popular Now"
-              movies={popularMovies.sort((a, b) => (b.popularity || 0) - (a.popularity || 0))}
-              mediaType="movie"
-              viewMoreLink="/explore?type=movie&sort=popular"
-              loading={loading}
-            />
+            {popularMovies.length > 0 && (
+              <MovieSlider
+                title="Popular Now"
+                movies={popularMovies.sort((a, b) => (b.popularity || 0) - (a.popularity || 0))}
+                mediaType="movie"
+                viewMoreLink="/explore?type=movie&sort=popular"
+                loading={loading}
+              />
+            )}
 
-            <MovieSlider
-              title="Trending This Week"
-              movies={trendingMovies}
-              mediaType="movie"
-              viewMoreLink="/explore?type=movie&sort=trending"
-              loading={loading}
-            />
+            {trendingMovies.length > 0 && (
+              <MovieSlider
+                title="Trending This Week"
+                movies={trendingMovies}
+                mediaType="movie"
+                viewMoreLink="/explore?type=movie&sort=trending"
+                loading={loading}
+              />
+            )}
 
-            <MovieSlider
-              title="Top Rated Movies"
-              movies={topRatedMovies}
-              mediaType="movie"
-              viewMoreLink="/explore?type=movie&sort=top_rated"
-              loading={loading}
-            />
+            {topRatedMovies.length > 0 && (
+              <MovieSlider
+                title="Top Rated Movies"
+                movies={topRatedMovies}
+                mediaType="movie"
+                viewMoreLink="/explore?type=movie&sort=top_rated"
+                loading={loading}
+              />
+            )}
 
-            <MovieSlider
-              title="Trending TV Shows"
-              movies={trendingTv}
-              mediaType="tv"
-              viewMoreLink="/explore?type=tv&sort=trending"
-              loading={loading}
-            />
+            {trendingTv.length > 0 && (
+              <MovieSlider
+                title="Trending TV Shows"
+                movies={trendingTv}
+                mediaType="tv"
+                viewMoreLink="/explore?type=tv&sort=trending"
+                loading={loading}
+              />
+            )}
 
-            <MovieSlider
-              title="Popular TV Shows"
-              movies={popularTv}
-              mediaType="tv"
-              viewMoreLink="/explore?type=tv&sort=popular"
-              loading={loading}
-            />
+            {popularTv.length > 0 && (
+              <MovieSlider
+                title="Popular TV Shows"
+                movies={popularTv}
+                mediaType="tv"
+                viewMoreLink="/explore?type=tv&sort=popular"
+                loading={loading}
+              />
+            )}
           </motion.div>
 
           {/* Right - Sidebar */}
           <div className="hidden lg:block">
             <div className="sticky top-24">
-              <Sidebar
-                trendingMovies={trendingMovies}
-                topTvShows={trendingTv}
-                loading={loading}
-              />
+              {(trendingMovies.length > 0 || trendingTv.length > 0) && (
+                <Sidebar
+                  trendingMovies={trendingMovies}
+                  topTvShows={trendingTv}
+                  loading={loading}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -234,7 +293,7 @@ export default function Index() {
 
       {!loading && !featuredMovie && (
         <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center space-y-4">
+          <div className="text-center space-y-4 p-4">
             <h2 className="text-2xl font-bold">Unable to Load Content</h2>
             <p className="text-white/60">Please refresh the page to try again</p>
             <button 
