@@ -77,6 +77,7 @@ export default function HeroBanner({ movie, mediaType = "movie", trailers = [], 
             decoding="async"
             fetchPriority="high"
           />
+          <div className="absolute inset-0 hero-sheen" />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black" />
@@ -99,6 +100,14 @@ export default function HeroBanner({ movie, mediaType = "movie", trailers = [], 
             transition={{ duration: 1, ease: "easeOut" }}
             className="space-y-8"
           >
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="hero-label"
+            >
+              Curated Spotlight
+            </motion.div>
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

@@ -107,8 +107,8 @@ export default function Navbar() {
       animate={{ y: 0 }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
-          ? "bg-background/90 backdrop-blur-lg border-b border-border"
-          : "bg-gradient-to-b from-background/80 to-transparent"
+          ? "bg-black/70 backdrop-blur-xl border-b border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
+          : "bg-gradient-to-b from-black/70 via-black/30 to-transparent"
       }`}
     >
       <nav className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
@@ -116,9 +116,11 @@ export default function Navbar() {
         <Link to="/" className="flex items-center gap-2 shrink-0">
           <motion.div
             whileHover={{ scale: 1.05 }}
-            className="text-3xl font-bold tracking-[0.2em] text-white"
+            className="brand-logo"
           >
-            CINE
+            <span className="text-white">CINE</span>
+            <span className="text-gradient">VIEW</span>
+            <span className="brand-chip">HUB</span>
           </motion.div>
         </Link>
 
@@ -128,10 +130,10 @@ export default function Navbar() {
             <Link
               key={link.href}
               to={link.href}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`nav-link ${
                 location.pathname === link.href.split("?")[0]
-                  ? "text-primary bg-primary/10"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  ? "nav-link-active"
+                  : "nav-link-inactive"
               }`}
             >
               {link.label}
