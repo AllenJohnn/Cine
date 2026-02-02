@@ -1,19 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Bell, User, Menu, X, LogOut, Settings, Film, Tv, Compass, Heart, Star, Sparkles } from "lucide-react";
+import { Search, Menu, X, Film, Tv, Compass, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuth } from "@/hooks/useAuth";
-import NotificationBell from "@/components/NotificationBell";
 import { tmdb, Movie, getImageUrl, getTitle, getReleaseYear } from "@/lib/tmdb";
 
 const navLinks = [
@@ -32,7 +22,6 @@ export default function Navbar() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
-  const { user, profile, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -234,6 +223,7 @@ export default function Navbar() {
               </motion.div>
             ) : (
               <Button
+                type="button"
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowSearch(true)}
@@ -241,69 +231,11 @@ export default function Navbar() {
               >
                 <Search className="h-5 w-5" />
               </Button>
-            )}
-          </AnimatePresence>
-
-          {/* Notifications */}
-          {user && <NotificationBell />}
-
-          {/* User Menu */}
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <Avatar className="h-8 w-8 border-2 border-primary/30">
-                    <AvatarImage src={profile?.avatar_url || undefined} />
-                    <AvatarFallback className="bg-primary text-primary-foreground">
-                      {profile?.username?.charAt(0).toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link to="/profile" className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Profile
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/watchlist" className="flex items-center gap-2">
-                    <Heart className="h-4 w-4" />
-                    Watchlist
-                  </Link>
-                </DropdownMenuItem>
-                {isAdmin && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link to="/admin" className="flex items-center gap-2">
-                        <Settings className="h-4 w-4" />
-                        Admin Panel
-                      </Link>
-                    </DropdownMenuItem>
-                  </>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={signOut} className="text-destructive">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <div className="hidden md:flex items-center gap-2">
-              <Button variant="ghost" asChild>
-                <Link to="/login">Sign In</Link>
-              </Button>
-              <Button variant="default" asChild className="bg-primary text-primary-foreground">
-                <Link to="/signup">Get Started</Link>
-              </Button>
-            </div>
-          )}
+            )}          </AnimatePresence>
 
           {/* Mobile Menu Button */}
           <Button
+            type="button"
             variant="ghost"
             size="icon"
             className="md:hidden"
@@ -335,20 +267,6 @@ export default function Navbar() {
                   <span>{link.label}</span>
                 </Link>
               ))}
-              {!user && (
-                <div className="pt-4 space-y-2 border-t border-border">
-                  <Button variant="outline" className="w-full" asChild>
-                    <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                      Sign In
-                    </Link>
-                  </Button>
-                  <Button className="w-full" asChild>
-                    <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
-                      Get Started
-                    </Link>
-                  </Button>
-                </div>
-              )}
             </div>
           </motion.div>
         )}

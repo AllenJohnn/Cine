@@ -7,7 +7,6 @@ import MovieSlider from "@/components/MovieSlider";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import { tmdb, Movie } from "@/lib/tmdb";
-import { supabase } from "@/integrations/supabase/client";
 
 export default function Index() {
   const [featuredMovie, setFeaturedMovie] = useState<Movie | null>(null);
@@ -20,6 +19,7 @@ export default function Index() {
   const [trendingTv, setTrendingTv] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [tmdbError, setTmdbError] = useState(false);
 
   // Filter out animes and non-English content
   const filterContent = (movies: Movie[]) => {
@@ -89,18 +89,6 @@ export default function Index() {
 
         console.log("API calls completed, setting data...");
 
-        let featuredData = null;
-        try {
-          const result = await supabase
-            .from("featured_movie")
-            .select("*")
-            .maybeSingle();
-          featuredData = result.data;
-        } catch (e) {
-          console.error("Featured data fetch failed:", e);
-          featuredData = null;
-        }
-
         // Use trending as fallback if popular is empty
         const trendingResults = trendingData?.results || [];
         const popularResults = popularData?.results || [];
@@ -108,6 +96,7 @@ export default function Index() {
         
         if (allMovies.length === 0) {
           console.warn("No movies found, showing fallback UI");
+          setTmdbError(true);
           clearTimeout(timeoutId);
           setLoading(false);
           return;
@@ -125,25 +114,8 @@ export default function Index() {
           .filter((m: Movie) => m.vote_average >= 7.5 && m.backdrop_path && (m.popularity || 0) > 50)
           .slice(0, 5);
 
-        let featured = null;
-        let heroMoviesList = [];
-
-        if (featuredData) {
-          try {
-            featured = await tmdb.getDetails(
-              featuredData.tmdb_id,
-              featuredData.media_type as "movie" | "tv"
-            );
-            heroMoviesList = [featured, ...topMovies.slice(0, 4)];
-          } catch (e) {
-            console.error("Featured movie details fetch failed:", e);
-            featured = topMovies[0] || trendingResults[0];
-            heroMoviesList = topMovies.length > 0 ? topMovies.slice(0, 5) : trendingResults.slice(0, 5);
-          }
-        } else {
-          featured = topMovies[0] || trendingResults[0];
-          heroMoviesList = topMovies.length > 0 ? topMovies.slice(0, 5) : trendingResults.slice(0, 5);
-        }
+        const featured = topMovies[0] || trendingResults[0];
+        const heroMoviesList = topMovies.length > 0 ? topMovies.slice(0, 5) : trendingResults.slice(0, 5);
 
         if (featured) {
           setFeaturedMovie(featured);
@@ -161,6 +133,7 @@ export default function Index() {
         console.log("Data fetch complete");
       } catch (error) {
         console.error("Unexpected error during fetch:", error);
+        setTmdbError(true);
       } finally {
         setLoading(false);
       }
@@ -306,6 +279,25 @@ export default function Index() {
 
           <Footer />
         </>
+      )}
+
+      {!loading && !featuredMovie && (
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="text-center space-y-4 p-4">
+            <h2 className="text-2xl font-bold text-white">Unable to Load Content</h2>
+            <p className="text-white/70">
+              {tmdbError
+                ? "TMDB is unreachable from this network. Please check your connection or try a VPN."
+                : "Please check your internet connection or try again."}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 bg-white text-black rounded-lg font-semibold hover:bg-white/90 transition"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

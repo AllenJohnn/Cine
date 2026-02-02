@@ -110,11 +110,11 @@ export class ErrorBoundary extends Component<Props, State> {
             )}
 
             <div className="flex gap-4 justify-center">
-              <Button onClick={this.handleReset} variant="default" size="lg">
+              <Button type="button" onClick={this.handleReset} variant="default" size="lg">
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Try Again
               </Button>
-              <Button onClick={this.handleGoHome} variant="outline" size="lg">
+              <Button type="button" onClick={this.handleGoHome} variant="outline" size="lg">
                 <Home className="mr-2 h-4 w-4" />
                 Go Home
               </Button>

@@ -1,5 +1,12 @@
 export const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
 
+// Helper to get base URL with optional proxy
+const getTMDBBaseURL = () => {
+  const proxy = import.meta.env.VITE_CORS_PROXY;
+  const baseUrl = 'https://api.themoviedb.org/3';
+  return proxy ? `${proxy}${baseUrl}` : baseUrl;
+};
+
 export const getImageUrl = (path: string | null, size: string = "w500") => {
   if (!path) return "/placeholder.svg";
   return `${TMDB_IMAGE_BASE}/${size}${path}`;
@@ -68,6 +75,45 @@ export interface Genre {
   name: string;
 }
 
+// Timeout wrapper for fetch
+async function fetchWithTimeout(url: string, timeout = 10000): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, { 
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+}
+
+// Retry logic with exponential backoff
+async function fetchWithRetry(url: string, retries = 3, timeout = 10000): Promise<Response> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetchWithTimeout(url, timeout);
+      return response;
+    } catch (error) {
+      const isLastAttempt = i === retries - 1;
+      if (isLastAttempt) {
+        throw error;
+      }
+      // Exponential backoff: wait 1s, 2s, 4s
+      const delay = Math.pow(2, i) * 1000;
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+
 async function tmdbFetch<T>(params: Record<string, string>): Promise<T> {
   const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
   const endpoint = params.endpoint;
@@ -77,7 +123,7 @@ async function tmdbFetch<T>(params: Record<string, string>): Promise<T> {
   const mediaType = params.media_type || 'movie';
   
   let tmdbUrl = '';
-  const baseUrl = 'https://api.themoviedb.org/3';
+  const baseUrl = getTMDBBaseURL();
 
   switch (endpoint) {
     case 'trending':
@@ -127,13 +173,27 @@ async function tmdbFetch<T>(params: Record<string, string>): Promise<T> {
       throw new Error(`Unknown endpoint: ${endpoint}`);
   }
 
-  const response = await fetch(tmdbUrl);
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch from TMDB');
+  try {
+    const response = await fetchWithRetry(tmdbUrl, 3, 10000);
+    
+    if (!response.ok) {
+      throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
+    }
+    
+    return response.json();
+  } catch (error) {
+    // Log for debugging
+    console.error('TMDB API error:', error);
+    
+    // Re-throw with more context
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        throw new Error('TMDB API request timed out. Please check your internet connection.');
+      }
+      throw new Error(`TMDB API request failed: ${error.message}`);
+    }
+    throw error;
   }
-  
-  return response.json();
 }
 
 export const tmdb = {

@@ -71,9 +71,27 @@ export default function PersonPage() {
         const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
         const baseUrl = 'https://api.themoviedb.org/3';
         
+        // Fetch with timeout and retry
+        const fetchWithTimeout = async (url: string, timeout = 10000) => {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), timeout);
+          
+          try {
+            const response = await fetch(url, { 
+              signal: controller.signal,
+              headers: { 'Accept': 'application/json' }
+            });
+            clearTimeout(timeoutId);
+            return response;
+          } catch (error) {
+            clearTimeout(timeoutId);
+            throw error;
+          }
+        };
+
         const [personResponse, creditsResponse] = await Promise.all([
-          fetch(`${baseUrl}/person/${id}?api_key=${TMDB_API_KEY}`),
-          fetch(`${baseUrl}/person/${id}/combined_credits?api_key=${TMDB_API_KEY}`)
+          fetchWithTimeout(`${baseUrl}/person/${id}?api_key=${TMDB_API_KEY}`),
+          fetchWithTimeout(`${baseUrl}/person/${id}/combined_credits?api_key=${TMDB_API_KEY}`)
         ]);
 
         if (!personResponse.ok || !creditsResponse.ok) {
@@ -87,6 +105,9 @@ export default function PersonPage() {
         setCredits(creditsData);
       } catch (error) {
         console.error("Failed to fetch person data:", error);
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.error("Request timed out - check your internet connection");
+        }
       } finally {
         setLoading(false);
       }

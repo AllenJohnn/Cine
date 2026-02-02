@@ -4,7 +4,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuth";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import DetailsPage from "./pages/DetailsPage";
@@ -15,11 +14,6 @@ const PersonPage = lazy(() => import("./pages/PersonPage"));
 // Lazy load heavy components
 const ExplorePage = lazy(() => import("./pages/ExplorePage"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
-const WatchlistPage = lazy(() => import("./pages/WatchlistPage"));
-const LoginPage = lazy(() => import("./pages/LoginPage"));
-const SignupPage = lazy(() => import("./pages/SignupPage"));
-const ProfilePage = lazy(() => import("./pages/ProfilePage"));
-const AdminPage = lazy(() => import("./pages/AdminPage"));
 const GenrePage = lazy(() => import("./pages/GenrePage"));
 const CollectionsPage = lazy(() => import("./pages/CollectionsPage"));
 
@@ -43,11 +37,10 @@ const queryClient = new QueryClient({
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/movie/:id" element={<DetailsPage />} />
@@ -85,46 +78,6 @@ const App = () => (
               }
             />
             <Route
-              path="/watchlist"
-              element={
-                <Suspense fallback={<LoadingFallback />}>
-                  <WatchlistPage />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <Suspense fallback={<LoadingFallback />}>
-                  <ProfilePage />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/admin"
-              element={
-                <Suspense fallback={<LoadingFallback />}>
-                  <AdminPage />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/login"
-              element={
-                <Suspense fallback={<LoadingFallback />}>
-                  <LoginPage />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/signup"
-              element={
-                <Suspense fallback={<LoadingFallback />}>
-                  <SignupPage />
-                </Suspense>
-              }
-            />
-            <Route
               path="/collections"
               element={
                 <Suspense fallback={<LoadingFallback />}>
@@ -136,8 +89,7 @@ const App = () => (
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+    </QueryClientProvider>
   </ErrorBoundary>
 );
 

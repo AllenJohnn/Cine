@@ -1,7 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Play, Heart, Plus, Share2, Star, Clock, Calendar, ArrowLeft, Check, Copy, MessageCircle } from "lucide-react";
+import { Play, Share2, Star, Clock, Calendar, ArrowLeft, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import MovieSlider from "@/components/MovieSlider";
@@ -10,8 +10,6 @@ import ReviewSection from "@/components/ReviewSection";
 import WatchProviders from "@/components/WatchProviders";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import { tmdb, Movie, getBackdropUrl, getImageUrl, getTitle, getReleaseYear, getRuntime, getTrailerKey } from "@/lib/tmdb";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 export default function DetailsPage() {
@@ -23,13 +21,8 @@ export default function DetailsPage() {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
   const [trailerOpen, setTrailerOpen] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
-  const [isInWatchlist, setIsInWatchlist] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
   const [shareMenuOpen, setShareMenuOpen] = useState(false);
   const [shareNote, setShareNote] = useState("");
-
-  const { user } = useAuth();
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -45,39 +38,6 @@ export default function DetailsPage() {
         }
         
         setMovie(data);
-
-        // Fetch likes count
-        const { count } = await supabase
-          .from("likes")
-          .select("*", { count: "exact", head: true })
-          .eq("tmdb_id", movieId)
-          .eq("media_type", mediaType);
-        
-        setLikesCount(count || 0);
-
-        if (user) {
-          // Check if user has liked
-          const { data: likeData } = await supabase
-            .from("likes")
-            .select("id")
-            .eq("user_id", user.id)
-            .eq("tmdb_id", movieId)
-            .eq("media_type", mediaType)
-            .maybeSingle();
-          
-          setIsLiked(!!likeData);
-
-          // Check if in watchlist
-          const { data: watchlistData } = await supabase
-            .from("watchlist")
-            .select("id")
-            .eq("user_id", user.id)
-            .eq("tmdb_id", movieId)
-            .eq("media_type", mediaType)
-            .maybeSingle();
-          
-          setIsInWatchlist(!!watchlistData);
-        }
       } catch (error) {
         console.error("Failed to fetch details:", error);
         toast.error("This content is no longer available. Redirecting...");
@@ -90,92 +50,7 @@ export default function DetailsPage() {
     if (movieId) {
       fetchDetails();
     }
-  }, [movieId, mediaType, user]);
-
-  // Realtime likes subscription
-  useEffect(() => {
-    const channel = supabase
-      .channel(`likes_${movieId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "likes",
-          filter: `tmdb_id=eq.${movieId}`,
-        },
-        async () => {
-          const { count } = await supabase
-            .from("likes")
-            .select("*", { count: "exact", head: true })
-            .eq("tmdb_id", movieId)
-            .eq("media_type", mediaType);
-          setLikesCount(count || 0);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [movieId, mediaType]);
-
-  const handleLike = async () => {
-    if (!user) {
-      toast.error("Please sign in to like");
-      return;
-    }
-
-    if (isLiked) {
-      await supabase
-        .from("likes")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("tmdb_id", movieId)
-        .eq("media_type", mediaType);
-      setIsLiked(false);
-      setLikesCount((c) => c - 1);
-    } else {
-      await supabase.from("likes").insert({
-        user_id: user.id,
-        tmdb_id: movieId,
-        media_type: mediaType,
-      });
-      setIsLiked(true);
-      setLikesCount((c) => c + 1);
-      toast.success("Added to your likes!");
-    }
-  };
-
-  const handleWatchlist = async () => {
-    if (!user) {
-      toast.error("Please sign in to add to watchlist");
-      return;
-    }
-
-    if (!movie) return;
-
-    if (isInWatchlist) {
-      await supabase
-        .from("watchlist")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("tmdb_id", movieId)
-        .eq("media_type", mediaType);
-      setIsInWatchlist(false);
-      toast.success("Removed from watchlist");
-    } else {
-      await supabase.from("watchlist").insert({
-        user_id: user.id,
-        tmdb_id: movieId,
-        media_type: mediaType,
-        title: getTitle(movie),
-        poster_path: movie.poster_path,
-      });
-      setIsInWatchlist(true);
-      toast.success("Added to watchlist!");
-    }
-  };
+  }, [movieId, mediaType, navigate]);
 
   const handleShare = async () => {
     try {
@@ -292,10 +167,6 @@ export default function DetailsPage() {
                     {runtime}
                   </span>
                 )}
-                <span className="flex items-center gap-2">
-                  <Heart className={`h-5 w-5 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />
-                  {likesCount} likes
-                </span>
               </div>
             </div>
 
@@ -310,30 +181,12 @@ export default function DetailsPage() {
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-4">
               {trailerKey && (
-                <Button size="lg" onClick={() => setTrailerOpen(true)} className="gap-2">
+                <Button type="button" size="lg" onClick={() => setTrailerOpen(true)} className="gap-2">
                   <Play className="h-5 w-5 fill-current" />
                   Watch Trailer
                 </Button>
               )}
-              <Button
-                size="lg"
-                variant={isLiked ? "default" : "outline"}
-                onClick={handleLike}
-                className={`gap-2 ${isLiked ? "bg-red-600 hover:bg-red-700" : ""}`}
-              >
-                <Heart className={`h-5 w-5 ${isLiked ? "fill-current" : ""}`} />
-                {isLiked ? "Liked" : "Like"}
-              </Button>
-              <Button
-                size="lg"
-                variant={isInWatchlist ? "default" : "outline"}
-                onClick={handleWatchlist}
-                className="gap-2"
-              >
-                {isInWatchlist ? <Check className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-                {isInWatchlist ? "In Watchlist" : "Add to Watchlist"}
-              </Button>
-              <Button size="lg" variant="outline" onClick={handleShare} className="gap-2">
+              <Button type="button" size="lg" variant="outline" onClick={handleShare} className="gap-2">
                 <Share2 className="h-5 w-5" />
                 Share
               </Button>
