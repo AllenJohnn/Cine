@@ -215,98 +215,98 @@ export default function Index() {
           />
 
           {/* Main Content */}
-          <main className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8">
-          {/* Left - Main Content */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-12"
-          >
-            {popularMovies.length > 0 && (
-              <MovieSlider
-                title="Popular Now"
-                movies={popularMovies.sort((a, b) => (b.popularity || 0) - (a.popularity || 0))}
-                mediaType="movie"
-                viewMoreLink="/explore?type=movie&sort=popular"
-                loading={loading}
-              />
-            )}
+          <main className="w-full bg-gradient-to-b from-background/50 to-background">
+            <div className="max-w-full px-0 sm:px-4 md:px-8 py-12 space-y-16">
+              {/* Trending Section */}
+              {trendingMovies.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="px-4 sm:px-0"
+                >
+                  <MovieSlider
+                    title="Trending Now"
+                    movies={trendingMovies}
+                    mediaType="movie"
+                    loading={loading}
+                  />
+                </motion.div>
+              )}
 
-            {trendingMovies.length > 0 && (
-              <MovieSlider
-                title="Trending This Week"
-                movies={trendingMovies}
-                mediaType="movie"
-                viewMoreLink="/explore?type=movie&sort=trending"
-                loading={loading}
-              />
-            )}
+              {/* Popular Section */}
+              {popularMovies.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="px-4 sm:px-0"
+                >
+                  <MovieSlider
+                    title="Popular on CineView"
+                    movies={popularMovies.sort((a, b) => (b.popularity || 0) - (a.popularity || 0))}
+                    mediaType="movie"
+                    loading={loading}
+                  />
+                </motion.div>
+              )}
 
-            {topRatedMovies.length > 0 && (
-              <MovieSlider
-                title="Top Rated Movies"
-                movies={topRatedMovies}
-                mediaType="movie"
-                viewMoreLink="/explore?type=movie&sort=top_rated"
-                loading={loading}
-              />
-            )}
+              {/* Top Rated Movies */}
+              {topRatedMovies.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="px-4 sm:px-0"
+                >
+                  <MovieSlider
+                    title="Top Rated Movies"
+                    movies={topRatedMovies}
+                    mediaType="movie"
+                    loading={loading}
+                  />
+                </motion.div>
+              )}
 
-            {trendingTv.length > 0 && (
-              <MovieSlider
-                title="Trending TV Shows"
-                movies={trendingTv}
-                mediaType="tv"
-                viewMoreLink="/explore?type=tv&sort=trending"
-                loading={loading}
-              />
-            )}
+              {/* Trending TV */}
+              {trendingTv.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="px-4 sm:px-0"
+                >
+                  <MovieSlider
+                    title="Trending TV Shows"
+                    movies={trendingTv}
+                    mediaType="tv"
+                    loading={loading}
+                  />
+                </motion.div>
+              )}
 
-            {popularTv.length > 0 && (
-              <MovieSlider
-                title="Popular TV Shows"
-                movies={popularTv}
-                mediaType="tv"
-                viewMoreLink="/explore?type=tv&sort=popular"
-                loading={loading}
-              />
-            )}
-          </motion.div>
-
-          {/* Right - Sidebar */}
-          <div className="hidden lg:block">
-            <div className="sticky top-24">
-              {(trendingMovies.length > 0 || trendingTv.length > 0) && (
-                <Sidebar
-                  trendingMovies={trendingMovies}
-                  topTvShows={trendingTv}
-                  loading={loading}
-                />
+              {/* Popular TV */}
+              {popularTv.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="px-4 sm:px-0"
+                >
+                  <MovieSlider
+                    title="Popular TV Shows"
+                    movies={popularTv}
+                    mediaType="tv"
+                    loading={loading}
+                  />
+                </motion.div>
               )}
             </div>
-          </div>
-        </div>
-      </main>
+          </main>
+
+          <Footer />
         </>
       )}
-
-      {!loading && !featuredMovie && (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center space-y-4 p-4">
-            <h2 className="text-2xl font-bold">Unable to Load Content</h2>
-            <p className="text-white/60">Please refresh the page to try again</p>
-            <button 
-              onClick={() => window.location.reload()}
-              className="px-6 py-2 bg-white text-black rounded-lg font-semibold hover:bg-white/90 transition"
-            >
-              Refresh Page
-            </button>
-          </div>
-        </div>
-      )}
-
-      <Footer />
     </div>
   );
 }

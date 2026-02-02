@@ -32,6 +32,7 @@
 @layer base {
   * {
     @apply border-border;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   body {
@@ -46,6 +47,18 @@
     background-image:
       radial-gradient(1200px 600px at 10% -10%, rgba(255, 255, 255, 0.04), transparent 60%),
       radial-gradient(800px 400px at 90% 0%, rgba(255, 255, 255, 0.03), transparent 55%);
+  }
+
+  /* Smooth scrolling for better UX */
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Improve touch interactions on mobile */
+  button, a, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
   h1, h2, h3, h4, h5, h6 {

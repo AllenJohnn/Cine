@@ -36,6 +36,14 @@ export default function DetailsPage() {
       setLoading(true);
       try {
         const data = await tmdb.getDetails(movieId, mediaType);
+        
+        // Check if data is valid (TMDB returns an object even for 404s sometimes)
+        if (!data || (data as any).success === false || !data.id) {
+          toast.error("This content is no longer available");
+          navigate("/");
+          return;
+        }
+        
         setMovie(data);
 
         // Fetch likes count
@@ -72,7 +80,8 @@ export default function DetailsPage() {
         }
       } catch (error) {
         console.error("Failed to fetch details:", error);
-        toast.error("Failed to load movie details");
+        toast.error("This content is no longer available. Redirecting...");
+        setTimeout(() => navigate("/"), 2000);
       } finally {
         setLoading(false);
       }

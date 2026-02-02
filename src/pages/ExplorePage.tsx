@@ -226,9 +226,11 @@ export default function ExplorePage() {
 
         {/* Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-          {movies.map((movie, index) => (
-            <MovieCard key={`${movie.id}-${index}`} movie={movie} mediaType={type} index={index} />
-          ))}
+          {movies
+            .filter((movie) => movie.id && movie.poster_path) // Filter out invalid movies
+            .map((movie, index) => (
+              <MovieCard key={`${movie.id}-${index}`} movie={movie} mediaType={type} index={index} />
+            ))}
           
           {/* Loading skeletons */}
           {loading &&
