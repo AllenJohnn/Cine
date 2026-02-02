@@ -25,7 +25,8 @@ export default function MovieSlider({
 
   const scroll = (direction: "left" | "right") => {
     if (!sliderRef.current) return;
-    const scrollAmount = sliderRef.current.offsetWidth * 0.75;
+    const isMobile = window.innerWidth < 768;
+    const scrollAmount = sliderRef.current.offsetWidth * (isMobile ? 0.85 : 0.75);
     const newScrollLeft = sliderRef.current.scrollLeft + (direction === "left" ? -scrollAmount : scrollAmount);
     
     sliderRef.current.scrollTo({
