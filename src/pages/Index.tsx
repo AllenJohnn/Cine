@@ -6,7 +6,27 @@ import HeroBannerSkeleton from "@/components/HeroBannerSkeleton";
 import MovieSlider from "@/components/MovieSlider";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
+import Seo from "@/components/Seo";
 import { tmdb, Movie } from "@/lib/tmdb";
+
+// Filter out animes and non-English content
+const filterContent = (movies: Movie[]) => {
+  return movies.filter((m: Movie) => {
+    const genres = m.genres?.map((g) => g.name) || [];
+    const genreIds = m.genre_ids || [];
+    // Exclude anime genre (id: 16)
+    if (genreIds.includes(16)) return false;
+    if (genres.includes("Animation") && !genres.includes("Comedy") && !genres.includes("Family")) return false;
+    return true;
+  });
+};
+
+// Filter for famous movies only (high popularity + good rating)
+const filterFamousMovies = (movies: Movie[]) => {
+  return filterContent(movies)
+    .filter((m: Movie) => m.popularity && m.popularity > 50)
+    .sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+};
 
 export default function Index() {
   const [featuredMovie, setFeaturedMovie] = useState<Movie | null>(null);
@@ -21,23 +41,6 @@ export default function Index() {
   const [progress, setProgress] = useState(0);
   const [tmdbError, setTmdbError] = useState(false);
 
-  // Filter out animes and non-English content
-  const filterContent = (movies: Movie[]) => {
-    return movies.filter((m: Movie) => {
-      const genres = m.genres?.map((g) => g.name) || [];
-      const genreIds = m.genre_ids || [];
-      // Exclude anime genre (id: 16)
-      if (genreIds.includes(16)) return false;
-      if (genres.includes("Animation") && !genres.includes("Comedy") && !genres.includes("Family")) return false;
-      return true;
-    });
-  };
-  // Filter for famous movies only (high popularity + good rating)
-  const filterFamousMovies = (movies: Movie[]) => {
-    return filterContent(movies)
-      .filter((m: Movie) => m.popularity && m.popularity > 50)
-      .sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
-  };
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -172,6 +175,10 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title="Home"
+        description="Discover trending movies and TV shows with a premium cinema experience."
+      />
       <Navbar />
 
       {loading && <HeroBannerSkeleton />}

@@ -4,6 +4,8 @@ import { Sparkles } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import MovieCard from "@/components/MovieCard";
 import Footer from "@/components/Footer";
+import Seo from "@/components/Seo";
+import { Button } from "@/components/ui/button";
 import { tmdb, Movie } from "@/lib/tmdb";
 
 interface Collection {
@@ -28,11 +30,14 @@ export default function CollectionsPage() {
   const [selectedCollection, setSelectedCollection] = useState<Collection>(collections[0]);
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const retryFetch = () => setSelectedCollection((prev) => ({ ...prev }));
 
   useEffect(() => {
     const controller = new AbortController();
     const fetchCollectionMovies = async () => {
       setLoading(true);
+      setErrorMessage(null);
       try {
         const searchPromises = selectedCollection.keywords.map(keyword =>
           tmdb.search(keyword, 1)
@@ -53,6 +58,7 @@ export default function CollectionsPage() {
       } catch (error) {
         if (!controller.signal.aborted) {
           console.error("Failed to fetch collection:", error);
+          setErrorMessage(error instanceof Error ? error.message : "Failed to fetch collection.");
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -67,6 +73,10 @@ export default function CollectionsPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title="Collections"
+        description="Explore iconic movie franchises and cinematic universes."
+      />
       <Navbar />
 
       <section className="container mx-auto px-4 pt-24 pb-12">
@@ -111,7 +121,15 @@ export default function CollectionsPage() {
         </motion.div>
 
         {/* Movies Grid */}
-        {loading ? (
+        {errorMessage && !loading ? (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-6 py-4 text-destructive">
+            <p className="font-semibold">Collection error</p>
+            <p className="text-sm text-destructive/90 mb-4">{errorMessage}</p>
+            <Button type="button" variant="outline" onClick={retryFetch}>
+              Try again
+            </Button>
+          </div>
+        ) : loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin" />
           </div>

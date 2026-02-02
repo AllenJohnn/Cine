@@ -5,6 +5,8 @@ import Navbar from "@/components/layout/Navbar";
 import MovieCard from "@/components/MovieCard";
 import MovieCardSkeleton from "@/components/MovieCardSkeleton";
 import Footer from "@/components/Footer";
+import Seo from "@/components/Seo";
+import { Button } from "@/components/ui/button";
 import { tmdb, Movie } from "@/lib/tmdb";
 
 const genreNames: Record<string, string> = {
@@ -35,6 +37,7 @@ export default function GenrePage() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const observerTarget = useRef<HTMLDivElement>(null);
 
   const genreName = id ? genreNames[id] || "Movies" : "Movies";
@@ -42,6 +45,7 @@ export default function GenrePage() {
   const fetchMovies = useCallback(async (pageNum: number) => {
     if (!id) return;
     setLoading(true);
+    setErrorMessage(null);
     try {
       const data = await tmdb.discover("movie", {
         genre: id,
@@ -57,6 +61,7 @@ export default function GenrePage() {
       setHasMore(data.page < data.total_pages);
     } catch (error) {
       console.error("Failed to fetch movies:", error);
+      setErrorMessage(error instanceof Error ? error.message : "Failed to fetch movies.");
     } finally {
       setLoading(false);
     }
@@ -99,6 +104,10 @@ export default function GenrePage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title={`${genreName} Movies`}
+        description={`Discover the best ${genreName.toLowerCase()} movies.`}
+      />
       <Navbar />
 
       <section className="container mx-auto px-4 pt-24 pb-12">
@@ -111,16 +120,26 @@ export default function GenrePage() {
           <p className="text-muted-foreground">Discover the best {genreName.toLowerCase()} movies</p>
         </motion.div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-          {movies.map((movie) => (
-            <MovieCard key={movie.id} movie={movie} mediaType="movie" />
-          ))}
-          
-          {loading &&
-            Array.from({ length: 12 }).map((_, i) => (
-              <MovieCardSkeleton key={`skeleton-${i}`} />
+        {errorMessage && !loading ? (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-6 py-4 text-destructive mb-8">
+            <p className="font-semibold">Genre error</p>
+            <p className="text-sm text-destructive/90 mb-4">{errorMessage}</p>
+            <Button type="button" variant="outline" onClick={() => fetchMovies(1)}>
+              Try again
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            {movies.map((movie) => (
+              <MovieCard key={movie.id} movie={movie} mediaType="movie" />
             ))}
-        </div>
+            
+            {loading &&
+              Array.from({ length: 12 }).map((_, i) => (
+                <MovieCardSkeleton key={`skeleton-${i}`} />
+              ))}
+          </div>
+        )}
 
         {hasMore && <div ref={observerTarget} className="h-20" />}
 

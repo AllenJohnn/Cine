@@ -9,6 +9,7 @@ import TrailerModal from "@/components/TrailerModal";
 import ReviewSection from "@/components/ReviewSection";
 import WatchProviders from "@/components/WatchProviders";
 import AnimatedCounter from "@/components/AnimatedCounter";
+import Seo from "@/components/Seo";
 import { tmdb, Movie, getBackdropUrl, getImageUrl, getTitle, getReleaseYear, getRuntime, getTrailerKey } from "@/lib/tmdb";
 import { toast } from "sonner";
 
@@ -31,7 +32,7 @@ export default function DetailsPage() {
         const data = await tmdb.getDetails(movieId, mediaType);
         
         // Check if data is valid (TMDB returns an object even for 404s sometimes)
-        if (!data || (data as any).success === false || !data.id) {
+        if (!data || (data as { success?: boolean }).success === false || !data.id) {
           toast.error("This content is no longer available");
           navigate("/");
           return;
@@ -84,6 +85,12 @@ export default function DetailsPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title={title}
+        description={movie.overview ? movie.overview.slice(0, 160) : `Details for ${title}.`}
+        image={movie.backdrop_path ? getBackdropUrl(movie.backdrop_path) : getImageUrl(movie.poster_path, "w500")}
+        type={mediaType === "movie" ? "video.movie" : "article"}
+      />
       <Navbar />
 
       {/* Backdrop */}

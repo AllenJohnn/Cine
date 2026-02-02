@@ -18,12 +18,27 @@ export default function HeroBanner({ movie, mediaType = "movie", trailers = [], 
   const [trailerOpen, setTrailerOpen] = useState(false);
   const [selectedTrailer, setSelectedTrailer] = useState<string | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const title = getTitle(movie);
   const year = getReleaseYear(movie);
+  const backdropUrl = getBackdropUrl(movie.backdrop_path);
 
   useEffect(() => {
     setImageLoaded(false);
+    setImageError(false);
   }, [movie.id]);
+
+  useEffect(() => {
+    const preload = new Image();
+    preload.src = backdropUrl;
+  }, [backdropUrl]);
+
+  useEffect(() => {
+    const nextBackdrop = trailers[0]?.backdrop_path;
+    if (!nextBackdrop) return;
+    const preloadNext = new Image();
+    preloadNext.src = getBackdropUrl(nextBackdrop);
+  }, [trailers]);
 
   const handlePlayTrailer = (trailerKey?: string) => {
     const key = trailerKey || getTrailerKey(movie);
@@ -49,9 +64,10 @@ export default function HeroBanner({ movie, mediaType = "movie", trailers = [], 
             className="absolute inset-0"
           >
             <img
-              src={getBackdropUrl(movie.backdrop_path)}
+              src={imageError ? "/placeholder.svg" : backdropUrl}
               alt={title}
               onLoad={() => setImageLoaded(true)}
+              onError={() => setImageError(true)}
               className="w-full h-full object-cover object-center"
             />
             {/* Vignette and Gradients */}
@@ -172,6 +188,7 @@ export default function HeroBanner({ movie, mediaType = "movie", trailers = [], 
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.7 }}
             onClick={onNext}
+            aria-label="Show next featured title"
             className="absolute bottom-8 right-8 flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white rounded-full border border-white/20 hover:border-white/40 transition-all duration-300 group"
           >
             <span className="text-sm font-medium hidden md:inline">Next</span>

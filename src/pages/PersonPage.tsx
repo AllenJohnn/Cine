@@ -5,7 +5,9 @@ import { Calendar, MapPin, ExternalLink } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import MovieCard from "@/components/MovieCard";
 import Footer from "@/components/Footer";
-import { getImageUrl } from "@/lib/tmdb";
+import Seo from "@/components/Seo";
+import { Button } from "@/components/ui/button";
+import { tmdb, getImageUrl } from "@/lib/tmdb";
 
 interface PersonDetails {
   id: number;
@@ -59,6 +61,7 @@ export default function PersonPage() {
   const [person, setPerson] = useState<PersonDetails | null>(null);
   const [credits, setCredits] = useState<PersonCredits | null>(null);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"movies" | "tv">("movies");
   const [showFullBio, setShowFullBio] = useState(false);
 
@@ -66,48 +69,20 @@ export default function PersonPage() {
     const fetchPersonData = async () => {
       if (!id) return;
       setLoading(true);
+      setErrorMessage(null);
       
       try {
-        const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
-        const baseUrl = 'https://api.themoviedb.org/3';
-        
-        // Fetch with timeout and retry
-        const fetchWithTimeout = async (url: string, timeout = 10000) => {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), timeout);
-          
-          try {
-            const response = await fetch(url, { 
-              signal: controller.signal,
-              headers: { 'Accept': 'application/json' }
-            });
-            clearTimeout(timeoutId);
-            return response;
-          } catch (error) {
-            clearTimeout(timeoutId);
-            throw error;
-          }
-        };
-
-        const [personResponse, creditsResponse] = await Promise.all([
-          fetchWithTimeout(`${baseUrl}/person/${id}?api_key=${TMDB_API_KEY}`),
-          fetchWithTimeout(`${baseUrl}/person/${id}/combined_credits?api_key=${TMDB_API_KEY}`)
+        const personId = Number(id);
+        const [personData, creditsData] = await Promise.all([
+          tmdb.getPersonDetails(personId),
+          tmdb.getPersonCredits(personId),
         ]);
 
-        if (!personResponse.ok || !creditsResponse.ok) {
-          throw new Error('Failed to fetch person data');
-        }
-
-        const personData = await personResponse.json();
-        const creditsData = await creditsResponse.json();
-
-        setPerson(personData);
-        setCredits(creditsData);
+        setPerson(personData as PersonDetails);
+        setCredits(creditsData as PersonCredits);
       } catch (error) {
         console.error("Failed to fetch person data:", error);
-        if (error instanceof Error && error.name === 'AbortError') {
-          console.error("Request timed out - check your internet connection");
-        }
+        setErrorMessage(error instanceof Error ? error.message : "Failed to load person details.");
       } finally {
         setLoading(false);
       }
@@ -130,6 +105,12 @@ export default function PersonPage() {
         <Navbar />
         <div className="container mx-auto px-4 pt-32 text-center">
           <h1 className="text-3xl font-bold">Person not found</h1>
+          {errorMessage && <p className="mt-4 text-muted-foreground">{errorMessage}</p>}
+          <div className="mt-6 flex justify-center">
+            <Button type="button" variant="outline" onClick={() => window.location.reload()}>
+              Try again
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -151,6 +132,12 @@ export default function PersonPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title={person.name}
+        description={person.biography ? person.biography.slice(0, 160) : `Learn more about ${person.name}.`}
+        image={person.profile_path ? getImageUrl(person.profile_path, "h632") : undefined}
+        type="profile"
+      />
       <Navbar />
 
       <section className="container mx-auto px-4 pt-24 pb-12">

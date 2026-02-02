@@ -6,7 +6,9 @@ import Navbar from "@/components/layout/Navbar";
 import MovieCard from "@/components/MovieCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import Seo from "@/components/Seo";
 import { tmdb, Movie } from "@/lib/tmdb";
+import { analytics } from "@/lib/analytics";
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -16,25 +18,53 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSearchTerm(query);
+  }, [query]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const trimmed = searchTerm.trim();
+      if (trimmed === query) return;
+      if (trimmed) {
+        setSearchParams({ q: trimmed });
+      } else {
+        setSearchParams({});
+      }
+    }, 400);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, query, setSearchParams]);
 
   useEffect(() => {
     const search = async () => {
       if (!query.trim()) {
         setResults([]);
+        setHasMore(false);
+        setPage(1);
+        setErrorMessage(null);
+        setLoading(false);
         return;
       }
 
       setLoading(true);
+      setErrorMessage(null);
       try {
         const data = await tmdb.search(query, 1);
-        const filtered = data.results.filter(
+        const filtered = Array.isArray(data?.results)
+          ? data.results.filter(
           (r) => r.media_type === "movie" || r.media_type === "tv"
-        );
+        )
+          : [];
         setResults(filtered);
-        setHasMore(data.page < data.total_pages);
+        setHasMore(Boolean(data?.page && data?.total_pages && data.page < data.total_pages));
         setPage(1);
+        analytics.search(query, filtered.length);
       } catch (error) {
         console.error("Search failed:", error);
+        setErrorMessage(error instanceof Error ? error.message : "Search failed. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -54,17 +84,21 @@ export default function SearchPage() {
     if (!query.trim() || loading) return;
 
     setLoading(true);
+    setErrorMessage(null);
     try {
       const nextPage = page + 1;
       const data = await tmdb.search(query, nextPage);
-      const filtered = data.results.filter(
+      const filtered = Array.isArray(data?.results)
+        ? data.results.filter(
         (r) => r.media_type === "movie" || r.media_type === "tv"
-      );
+      )
+        : [];
       setResults((prev) => [...prev, ...filtered]);
-      setHasMore(data.page < data.total_pages);
+      setHasMore(Boolean(data?.page && data?.total_pages && data.page < data.total_pages));
       setPage(nextPage);
     } catch (error) {
       console.error("Load more failed:", error);
+      setErrorMessage(error instanceof Error ? error.message : "Failed to load more results.");
     } finally {
       setLoading(false);
     }
@@ -72,6 +106,10 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title={query ? `Search results for "${query}"` : "Search"}
+        description={query ? `Search results for ${query}.` : "Search movies and TV shows."}
+      />
       <Navbar />
 
       <main className="container mx-auto px-4 pt-24 pb-12">
@@ -88,6 +126,7 @@ export default function SearchPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search movies and TV shows..."
+              aria-label="Search movies and TV shows"
               className="pl-12 h-14 text-lg bg-muted border-border"
             />
             <Button
@@ -111,7 +150,12 @@ export default function SearchPage() {
                 : `Results for "${query}"`}
             </h2>
 
-            {results.length > 0 ? (
+            {errorMessage ? (
+              <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-6 py-4 text-destructive">
+                <p className="font-semibold">Search error</p>
+                <p className="text-sm text-destructive/90">{errorMessage}</p>
+              </div>
+            ) : results.length > 0 ? (
               <>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                   {results.map((item, index) => (

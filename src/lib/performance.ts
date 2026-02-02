@@ -49,17 +49,25 @@ export async function measureAsyncPerformance<T>(
  */
 export function reportWebVitals(onPerfEntry?: (metric: WebVitalsMetric) => void) {
   if (onPerfEntry && onPerfEntry instanceof Function) {
-    // Web Vitals package is optional - uncomment if installed
-    // import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
-    //   getCLS(onPerfEntry);
-    //   getFID(onPerfEntry);
-    //   getFCP(onPerfEntry);
-    //   getLCP(onPerfEntry);
-    //   getTTFB(onPerfEntry);
-    // }).catch(() => {
-    //   console.log('web-vitals package not installed');
-    // });
-    console.log('Web Vitals tracking configured but package not installed');
+    import('web-vitals')
+      .then(({ onCLS, onFCP, onLCP, onTTFB, onINP }) => {
+        const handleMetric = (metric: { name: string; value: number; rating: WebVitalsMetric['rating'] }) => {
+          onPerfEntry({
+            name: metric.name,
+            value: metric.value,
+            rating: metric.rating,
+          });
+        };
+
+        onCLS(handleMetric);
+        onFCP(handleMetric);
+        onLCP(handleMetric);
+        onTTFB(handleMetric);
+        onINP(handleMetric);
+      })
+      .catch(() => {
+        console.log('web-vitals package not installed');
+      });
   }
 }
 
@@ -163,7 +171,14 @@ export function prefersReducedMotion(): boolean {
  */
 export function getNetworkInfo() {
   if ('connection' in navigator) {
-    const conn = (navigator as any).connection;
+    const conn = (navigator as Navigator & {
+      connection?: {
+        effectiveType?: string;
+        downlink?: number;
+        rtt?: number;
+        saveData?: boolean;
+      };
+    }).connection;
     return {
       effectiveType: conn?.effectiveType || 'unknown',
       downlink: conn?.downlink || 0,

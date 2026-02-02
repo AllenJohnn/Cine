@@ -7,6 +7,7 @@ import MovieCard from "@/components/MovieCard";
 import MovieCardSkeleton from "@/components/MovieCardSkeleton";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import Seo from "@/components/Seo";
 import { tmdb, Movie, Genre } from "@/lib/tmdb";
 
 export default function ExplorePage() {
@@ -17,6 +18,7 @@ export default function ExplorePage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const observerTarget = useRef<HTMLDivElement>(null);
 
   // Filters from URL
@@ -39,6 +41,7 @@ export default function ExplorePage() {
 
   const fetchMovies = useCallback(async (pageNum: number, reset = false) => {
     setLoading(true);
+    setErrorMessage(null);
     try {
       const data = await tmdb.discover(type, {
         genre,
@@ -55,6 +58,7 @@ export default function ExplorePage() {
       setHasMore(data.page < data.total_pages);
     } catch (error) {
       console.error("Failed to fetch movies:", error);
+      setErrorMessage(error instanceof Error ? error.message : "Failed to fetch movies.");
     } finally {
       setLoading(false);
     }
@@ -71,6 +75,7 @@ export default function ExplorePage() {
         setGenres(data.genres);
       } catch (error) {
         console.error("Failed to fetch genres:", error);
+        setErrorMessage("Failed to load genres.");
       }
     };
     fetchGenres();
@@ -116,6 +121,10 @@ export default function ExplorePage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title={`Explore ${type === "tv" ? "TV Shows" : "Movies"}`}
+        description="Browse and filter movies and TV shows by genre, year, and popularity."
+      />
       <Navbar />
 
       <main className="container mx-auto px-4 pt-24 pb-12">
@@ -224,20 +233,29 @@ export default function ExplorePage() {
           </div>
         </motion.div>
 
-        {/* Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-          {movies
-            .filter((movie) => movie.id && movie.poster_path) // Filter out invalid movies
-            .map((movie, index) => (
-              <MovieCard key={`${movie.id}-${index}`} movie={movie} mediaType={type} index={index} />
-            ))}
-          
-          {/* Loading skeletons */}
-          {loading &&
-            Array.from({ length: 12 }).map((_, i) => (
-              <MovieCardSkeleton key={`skeleton-${i}`} />
-            ))}
-        </div>
+        {errorMessage && !loading ? (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-6 py-4 text-destructive mb-8">
+            <p className="font-semibold">Explore error</p>
+            <p className="text-sm text-destructive/90 mb-4">{errorMessage}</p>
+            <Button type="button" variant="outline" onClick={() => fetchMovies(1, true)}>
+              Try again
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            {movies
+              .filter((movie) => movie.id && movie.poster_path) // Filter out invalid movies
+              .map((movie, index) => (
+                <MovieCard key={`${movie.id}-${index}`} movie={movie} mediaType={type} index={index} />
+              ))}
+            
+            {/* Loading skeletons */}
+            {loading &&
+              Array.from({ length: 12 }).map((_, i) => (
+                <MovieCardSkeleton key={`skeleton-${i}`} />
+              ))}
+          </div>
+        )}
 
         {/* Infinite scroll trigger */}
         {hasMore && <div ref={observerTarget} className="h-20" />}

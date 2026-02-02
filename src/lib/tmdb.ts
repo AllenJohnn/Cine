@@ -1,9 +1,14 @@
 export const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
 
+const TMDB_CACHE_TTL = 1000 * 60 * 5; // 5 minutes
+const tmdbCache = new Map<string, { expiresAt: number; data: unknown }>();
+
 // Helper to get base URL with optional proxy
 const getTMDBBaseURL = () => {
+  const apiBase = import.meta.env.VITE_TMDB_API_BASE;
+  if (apiBase) return apiBase.replace(/\/$/, "");
   const proxy = import.meta.env.VITE_CORS_PROXY;
-  const baseUrl = 'https://api.themoviedb.org/3';
+  const baseUrl = "https://api.themoviedb.org/3";
   return proxy ? `${proxy}${baseUrl}` : baseUrl;
 };
 
@@ -75,6 +80,15 @@ export interface Genre {
   name: string;
 }
 
+export interface WatchProvidersResponse {
+  results?: Record<string, {
+    link: string;
+    flatrate?: { logo_path: string; provider_id: number; provider_name: string }[];
+    rent?: { logo_path: string; provider_id: number; provider_name: string }[];
+    buy?: { logo_path: string; provider_id: number; provider_name: string }[];
+  }>;
+}
+
 // Timeout wrapper for fetch
 async function fetchWithTimeout(url: string, timeout = 10000): Promise<Response> {
   const controller = new AbortController();
@@ -116,42 +130,52 @@ async function fetchWithRetry(url: string, retries = 3, timeout = 10000): Promis
 
 async function tmdbFetch<T>(params: Record<string, string>): Promise<T> {
   const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+  const hasProxy = Boolean(import.meta.env.VITE_TMDB_API_BASE);
   const endpoint = params.endpoint;
   const query = params.query;
   const page = params.page || '1';
   const id = params.id;
   const mediaType = params.media_type || 'movie';
+
+  if (!TMDB_API_KEY && !hasProxy) {
+    throw new Error('TMDB API key is missing. Set VITE_TMDB_API_KEY in your environment.');
+  }
   
   let tmdbUrl = '';
   const baseUrl = getTMDBBaseURL();
+  const apiKeyQuery = hasProxy ? '' : `api_key=${TMDB_API_KEY}`;
+  const joinQuery = (path: string, extraQuery: string) => {
+    const queryString = [apiKeyQuery, extraQuery].filter(Boolean).join('&');
+    return queryString ? `${baseUrl}${path}?${queryString}` : `${baseUrl}${path}`;
+  };
 
   switch (endpoint) {
     case 'trending':
-      tmdbUrl = `${baseUrl}/trending/${mediaType}/week?api_key=${TMDB_API_KEY}&page=${page}`;
+      tmdbUrl = joinQuery(`/trending/${mediaType}/week`, `page=${page}`);
       break;
     case 'popular':
-      tmdbUrl = `${baseUrl}/${mediaType}/popular?api_key=${TMDB_API_KEY}&page=${page}`;
+      tmdbUrl = joinQuery(`/${mediaType}/popular`, `page=${page}`);
       break;
     case 'top_rated':
-      tmdbUrl = `${baseUrl}/${mediaType}/top_rated?api_key=${TMDB_API_KEY}&page=${page}`;
+      tmdbUrl = joinQuery(`/${mediaType}/top_rated`, `page=${page}`);
       break;
     case 'now_playing':
-      tmdbUrl = `${baseUrl}/movie/now_playing?api_key=${TMDB_API_KEY}&page=${page}`;
+      tmdbUrl = joinQuery(`/movie/now_playing`, `page=${page}`);
       break;
     case 'on_the_air':
-      tmdbUrl = `${baseUrl}/tv/on_the_air?api_key=${TMDB_API_KEY}&page=${page}`;
+      tmdbUrl = joinQuery(`/tv/on_the_air`, `page=${page}`);
       break;
     case 'details':
-      tmdbUrl = `${baseUrl}/${mediaType}/${id}?api_key=${TMDB_API_KEY}&append_to_response=videos,credits,similar,watch_providers`;
+      tmdbUrl = joinQuery(`/${mediaType}/${id}`, `append_to_response=videos,credits,similar,watch_providers`);
       break;
     case 'search':
-      tmdbUrl = `${baseUrl}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query || '')}&page=${page}`;
+      tmdbUrl = joinQuery(`/search/multi`, `query=${encodeURIComponent(query || '')}&page=${page}`);
       break;
-    case 'discover':
+    case 'discover': {
       const genre = params.genre || '';
       const year = params.year || '';
       const sortBy = params.sort_by || 'popularity.desc';
-      let discoverUrl = `${baseUrl}/discover/${mediaType}?api_key=${TMDB_API_KEY}&page=${page}&sort_by=${sortBy}`;
+      let discoverUrl = joinQuery(`/discover/${mediaType}`, `page=${page}&sort_by=${sortBy}`);
       if (genre) discoverUrl += `&with_genres=${genre}`;
       if (year) {
         if (mediaType === 'movie') {
@@ -162,25 +186,52 @@ async function tmdbFetch<T>(params: Record<string, string>): Promise<T> {
       }
       tmdbUrl = discoverUrl;
       break;
+    }
     case 'watch_providers':
       if (!id) throw new Error('ID parameter is required for watch_providers');
-      tmdbUrl = `${baseUrl}/${mediaType}/${id}/watch/providers?api_key=${TMDB_API_KEY}`;
+      tmdbUrl = joinQuery(`/${mediaType}/${id}/watch/providers`, ``);
       break;
     case 'genres':
-      tmdbUrl = `${baseUrl}/genre/${mediaType}/list?api_key=${TMDB_API_KEY}`;
+      tmdbUrl = joinQuery(`/genre/${mediaType}/list`, ``);
+      break;
+    case 'person_details':
+      if (!id) throw new Error('ID parameter is required for person_details');
+      tmdbUrl = joinQuery(`/person/${id}`, ``);
+      break;
+    case 'person_credits':
+      if (!id) throw new Error('ID parameter is required for person_credits');
+      tmdbUrl = joinQuery(`/person/${id}/combined_credits`, ``);
       break;
     default:
       throw new Error(`Unknown endpoint: ${endpoint}`);
   }
 
   try {
+    const cached = tmdbCache.get(tmdbUrl);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.data as T;
+    }
+
     const response = await fetchWithRetry(tmdbUrl, 3, 10000);
     
     if (!response.ok) {
       throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
     }
     
-    return response.json();
+    const data = await response.json();
+
+    if (
+      data &&
+      typeof data === 'object' &&
+      'status_code' in data &&
+      'status_message' in data
+    ) {
+      const message = String((data as { status_message?: string }).status_message || 'Unknown TMDB error');
+      throw new Error(message);
+    }
+
+    tmdbCache.set(tmdbUrl, { expiresAt: Date.now() + TMDB_CACHE_TTL, data });
+    return data as T;
   } catch (error) {
     // Log for debugging
     console.error('TMDB API error:', error);
@@ -238,11 +289,17 @@ export const tmdb = {
     tmdbFetch<{ genres: Genre[] }>({ endpoint: "genres", media_type: mediaType }),
 
   getWatchProviders: (id: number, mediaType: "movie" | "tv" = "movie") =>
-    tmdbFetch<{ results?: { [key: string]: any } }>({ 
+    tmdbFetch<WatchProvidersResponse>({ 
       endpoint: "watch_providers", 
       id: String(id), 
       media_type: mediaType 
     }),
+
+  getPersonDetails: (id: number) =>
+    tmdbFetch<Record<string, unknown>>({ endpoint: "person_details", id: String(id) }),
+
+  getPersonCredits: (id: number) =>
+    tmdbFetch<Record<string, unknown>>({ endpoint: "person_credits", id: String(id) }),
 };
 
 export const getTitle = (item: Movie) => item.title || item.name || "Unknown";

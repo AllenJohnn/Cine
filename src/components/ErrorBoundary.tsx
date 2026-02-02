@@ -2,6 +2,7 @@ import React, { Component, ErrorInfo, ReactNode } from "react";
 import { AlertCircle, RefreshCw, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { toast } from "sonner";
 
 interface Props {
   children: ReactNode;
@@ -48,6 +49,8 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log error details for debugging
     console.error("Error Boundary caught an error:", error, errorInfo);
+
+    toast.error("Something went wrong. Please try again.");
     
     // You can also log the error to an error reporting service here
     // Example: logErrorToService(error, errorInfo);
