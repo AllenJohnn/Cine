@@ -109,7 +109,6 @@ export default function Navbar() {
           >
             <span className="text-white">CINE</span>
             <span className="text-gradient">VIEW</span>
-            <span className="brand-chip">HUB</span>
           </motion.div>
         </Link>
 

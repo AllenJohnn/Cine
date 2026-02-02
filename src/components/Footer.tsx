@@ -14,7 +14,7 @@ export default function Footer() {
             className="text-center"
           >
             <h2 className="text-5xl md:text-7xl font-black mb-3 tracking-wider" style={{ fontFamily: 'Bebas Neue, sans-serif' }}>
-              CINEVIEW HUB
+              CINEVIEW
             </h2>
             <p className="text-white/60 text-sm tracking-[0.3em] uppercase" style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 300 }}>
               Your Premium Cinema Experience
@@ -71,7 +71,7 @@ export default function Footer() {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="text-center text-white/40 text-sm pt-4"
           >
-            <p className="font-medium" style={{ fontFamily: 'Poppins, sans-serif' }}>© {new Date().getFullYear()} CineView Hub.</p>
+            <p className="font-medium" style={{ fontFamily: 'Poppins, sans-serif' }}>© {new Date().getFullYear()} CineView.</p>
             <p className="mt-2 text-xs text-white/30">
               Powered by TMDB API
             </p>

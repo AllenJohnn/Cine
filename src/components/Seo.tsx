@@ -8,7 +8,7 @@ interface SeoProps {
   url?: string;
 }
 
-const SITE_NAME = "CineView Hub";
+const SITE_NAME = "CineView";
 
 export default function Seo({ title, description, image, type = "website", url }: SeoProps) {
   const resolvedUrl = url || (typeof window !== "undefined" ? window.location.href : "");
