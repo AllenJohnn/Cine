@@ -96,7 +96,7 @@ async function tmdbFetch<T>(params: Record<string, string>): Promise<T> {
       tmdbUrl = `${baseUrl}/tv/on_the_air?api_key=${TMDB_API_KEY}&page=${page}`;
       break;
     case 'details':
-      tmdbUrl = `${baseUrl}/${mediaType}/${id}?api_key=${TMDB_API_KEY}&append_to_response=videos,credits,similar,watch/providers`;
+      tmdbUrl = `${baseUrl}/${mediaType}/${id}?api_key=${TMDB_API_KEY}&append_to_response=videos,credits,similar,watch_providers`;
       break;
     case 'search':
       tmdbUrl = `${baseUrl}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query || '')}&page=${page}`;
