@@ -5,8 +5,11 @@ const tmdbCache = new Map<string, { expiresAt: number; data: unknown }>();
 
 // Helper to get base URL with optional proxy
 const getTMDBBaseURL = () => {
+  // First priority: use VITE_TMDB_API_BASE (server proxy)
   const apiBase = import.meta.env.VITE_TMDB_API_BASE;
   if (apiBase) return apiBase.replace(/\/$/, "");
+  
+  // Second priority: use CORS proxy
   const proxy = import.meta.env.VITE_CORS_PROXY;
   const baseUrl = "https://api.themoviedb.org/3";
   return proxy ? `${proxy}${baseUrl}` : baseUrl;
@@ -137,7 +140,13 @@ async function tmdbFetch<T>(params: Record<string, string>): Promise<T> {
   const id = params.id;
   const mediaType = params.media_type || 'movie';
 
+  // Check if we have either proxy or API key
   if (!TMDB_API_KEY && !hasProxy) {
+    console.error('TMDB configuration error:', {
+      hasKey: Boolean(TMDB_API_KEY),
+      hasProxy,
+      baseUrl: import.meta.env.VITE_TMDB_API_BASE
+    });
     throw new Error('TMDB API key is missing. Set VITE_TMDB_API_KEY in your environment.');
   }
   
@@ -212,9 +221,16 @@ async function tmdbFetch<T>(params: Record<string, string>): Promise<T> {
       return cached.data as T;
     }
 
+    console.log('Fetching TMDB:', { url: tmdbUrl, hasProxy, endpoint });
+    
     const response = await fetchWithRetry(tmdbUrl, 3, 10000);
     
     if (!response.ok) {
+      console.error('TMDB API error response:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: tmdbUrl
+      });
       throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
     }
     
@@ -233,8 +249,14 @@ async function tmdbFetch<T>(params: Record<string, string>): Promise<T> {
     tmdbCache.set(tmdbUrl, { expiresAt: Date.now() + TMDB_CACHE_TTL, data });
     return data as T;
   } catch (error) {
-    // Log for debugging
-    console.error('TMDB API error:', error);
+    // Log for debugging with more context
+    console.error('TMDB API error details:', {
+      error,
+      endpoint,
+      baseUrl: getTMDBBaseURL(),
+      hasProxy,
+      mediaType
+    });
     
     // Re-throw with more context
     if (error instanceof Error) {

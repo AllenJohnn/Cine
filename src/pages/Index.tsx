@@ -45,6 +45,11 @@ export default function Index() {
     const fetchData = async () => {
       try {
         console.log("Starting data fetch...");
+        console.log("Environment:", {
+          apiBase: import.meta.env.VITE_TMDB_API_BASE,
+          hasKey: Boolean(import.meta.env.VITE_TMDB_API_KEY),
+          userAgent: navigator.userAgent
+        });
         
         // Add timeout to prevent infinite loading
         const timeoutId = setTimeout(() => {
