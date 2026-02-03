@@ -1,7 +1,7 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Play, Share2, Star, Clock, Calendar, ArrowLeft, Copy } from "lucide-react";
+import { Play, Share2, Star, Clock, Calendar, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import MovieSlider from "@/components/MovieSlider";
@@ -9,6 +9,8 @@ import TrailerModal from "@/components/TrailerModal";
 import ReviewSection from "@/components/ReviewSection";
 import WatchProviders from "@/components/WatchProviders";
 import AnimatedCounter from "@/components/AnimatedCounter";
+import CastCarousel from "@/components/CastCarousel";
+import VideoGallery from "@/components/VideoGallery";
 import Seo from "@/components/Seo";
 import { tmdb, Movie, getBackdropUrl, getImageUrl, getTitle, getReleaseYear, getRuntime, getTrailerKey } from "@/lib/tmdb";
 import { toast } from "sonner";
@@ -22,8 +24,6 @@ export default function DetailsPage() {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
   const [trailerOpen, setTrailerOpen] = useState(false);
-  const [shareMenuOpen, setShareMenuOpen] = useState(false);
-  const [shareNote, setShareNote] = useState("");
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -80,8 +80,9 @@ export default function DetailsPage() {
   const year = getReleaseYear(movie);
   const runtime = getRuntime(movie);
   const trailerKey = getTrailerKey(movie);
-  const cast = movie.credits?.cast?.slice(0, 10) || [];
+  const cast = movie.credits?.cast?.slice(0, 20) || [];
   const similar = movie.similar?.results?.slice(0, 10) || [];
+  const videos = movie.videos?.results || [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -199,35 +200,19 @@ export default function DetailsPage() {
               </Button>
             </div>
 
-            {/* Cast */}
+            {/* Cast Carousel */}
             {cast.length > 0 && (
-              <div className="pt-8">
-                <h3 className="text-xl font-bold mb-4">Cast</h3>
-                <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2">
-                  {cast.map((actor) => (
-                    <motion.div
-                      key={actor.id}
-                      whileHover={{ scale: 1.05 }}
-                      className="shrink-0 w-24 text-center cursor-pointer"
-                      onClick={() => navigate(`/person/${actor.id}`)}
-                    >
-                      <div className="w-20 h-20 mx-auto rounded-full overflow-hidden bg-muted ring-2 ring-transparent hover:ring-primary transition-all">
-                        <img
-                          src={getImageUrl(actor.profile_path, "w185")}
-                          alt={actor.name}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      </div>
-                      <p className="mt-2 text-sm font-medium line-clamp-1 hover:text-primary transition-colors">{actor.name}</p>
-                      <p className="text-xs text-muted-foreground line-clamp-1">{actor.character}</p>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
+              <CastCarousel cast={cast} />
             )}
           </motion.div>
         </div>
+
+        {/* Video Gallery */}
+        {videos.length > 0 && (
+          <div className="mt-16">
+            <VideoGallery videos={videos} />
+          </div>
+        )}
 
         {/* Reviews */}
         <div className="mt-16">

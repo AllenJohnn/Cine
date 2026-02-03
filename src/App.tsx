@@ -3,11 +3,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { HelmetProvider } from "react-helmet-async";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { AnimatePresence } from "framer-motion";
+import LoadingBar from "@/components/LoadingBar";
+import PageTransition from "@/components/PageTransition";
 import Index from "./pages/Index";
 import DetailsPage from "./pages/DetailsPage";
 import NotFound from "./pages/NotFound";
@@ -37,6 +40,64 @@ const queryClient = new QueryClient({
   },
 });
 
+function AnimatedRoutes() {
+  const location = useLocation();
+  
+  return (
+    <>
+      <LoadingBar />
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<PageTransition><Index /></PageTransition>} />
+          <Route path="/movie/:id" element={<PageTransition><DetailsPage /></PageTransition>} />
+          <Route path="/tv/:id" element={<PageTransition><DetailsPage /></PageTransition>} />
+          <Route
+            path="/person/:id"
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <PageTransition><PersonPage /></PageTransition>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/genre/:id"
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <PageTransition><GenrePage /></PageTransition>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/explore"
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <PageTransition><ExplorePage /></PageTransition>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/search"
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <PageTransition><SearchPage /></PageTransition>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/collections"
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <PageTransition><CollectionsPage /></PageTransition>
+              </Suspense>
+            }
+          />
+          <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+        </Routes>
+      </AnimatePresence>
+    </>
+  );
+}
+
 const App = () => (
   <ErrorBoundary>
     <HelmetProvider>
@@ -47,52 +108,7 @@ const App = () => (
           <Analytics />
           <SpeedInsights />
           <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/movie/:id" element={<DetailsPage />} />
-              <Route path="/tv/:id" element={<DetailsPage />} />
-              <Route
-                path="/person/:id"
-                element={
-                  <Suspense fallback={<LoadingFallback />}>
-                    <PersonPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/genre/:id"
-                element={
-                  <Suspense fallback={<LoadingFallback />}>
-                    <GenrePage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/explore"
-                element={
-                  <Suspense fallback={<LoadingFallback />}>
-                    <ExplorePage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/search"
-                element={
-                  <Suspense fallback={<LoadingFallback />}>
-                    <SearchPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/collections"
-                element={
-                  <Suspense fallback={<LoadingFallback />}>
-                    <CollectionsPage />
-                  </Suspense>
-                }
-              />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <AnimatedRoutes />
           </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
