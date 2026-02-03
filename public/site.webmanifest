@@ -1,0 +1,17 @@
+{
+  "name": "CineView Hub",
+  "short_name": "CineView",
+  "description": "Discover movies and TV shows with a premium cinema experience",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#0f172a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

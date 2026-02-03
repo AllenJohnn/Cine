@@ -40,6 +40,7 @@ export default function Index() {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [tmdbError, setTmdbError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -142,6 +143,7 @@ export default function Index() {
       } catch (error) {
         console.error("Unexpected error during fetch:", error);
         setTmdbError(true);
+        setErrorMessage(error instanceof Error ? error.message : "Unknown error");
       } finally {
         setLoading(false);
       }
@@ -295,19 +297,30 @@ export default function Index() {
 
       {!loading && !featuredMovie && (
         <div className="min-h-[60vh] flex items-center justify-center">
-          <div className="text-center space-y-4 p-4">
+          <div className="text-center space-y-4 p-4 max-w-md">
+            <div className="text-6xl mb-4">🎬</div>
             <h2 className="text-2xl font-bold text-white">Unable to Load Content</h2>
             <p className="text-white/70">
               {tmdbError
-                ? "TMDB is unreachable from this network. Please check your connection or try a VPN."
+                ? "TMDB API is unreachable. This might be due to network restrictions or configuration issues."
                 : "Please check your internet connection or try again."}
             </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="px-6 py-2 bg-white text-black rounded-lg font-semibold hover:bg-white/90 transition"
-            >
-              Refresh Page
-            </button>
+            {errorMessage && (
+              <p className="text-xs text-red-400 font-mono bg-red-500/10 p-2 rounded">
+                {errorMessage}
+              </p>
+            )}
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => window.location.reload()}
+                className="px-6 py-3 bg-white text-black rounded-lg font-semibold hover:bg-white/90 transition"
+              >
+                Refresh Page
+              </button>
+              <p className="text-xs text-white/40">
+                Check browser console (F12) for more details
+              </p>
+            </div>
           </div>
         </div>
       )}
