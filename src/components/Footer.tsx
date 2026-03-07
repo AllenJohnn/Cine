@@ -52,7 +52,7 @@ export default function Footer() {
               </div>
             </a>
             <a
-              href="https://allenjohnn.vercel.app/"
+              href="https://allenjohnportfolio.vercel.app/"
               target="_blank"
               rel="noopener noreferrer"
               className="group relative p-3 rounded-full bg-white/5 hover:bg-white/10 transition-all duration-300 hover:scale-110"
